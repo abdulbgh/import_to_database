@@ -1,32 +1,31 @@
 <?php
 
-namespace App\Exports;
+namespace App\Exports\Api\Tenant\Client\Export\Log;
 
+use App\Models\Customer;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
 
-class SuccessExcelExport implements  FromArray,WithHeadings
-
+class ClientErrorLogExport implements FromArray,WithHeadings
 {
-    private $success_data;
+    private $errors;
     protected $data= [];
     protected $headers= [];
 
-    public function __construct($success_data)
+    public function __construct($errors)
     {
-        $this->success_data = $success_data;
+        $this->errors = $errors;
     }
     public function array(): array
     {
-    
-        foreach($this->success_data as $item){
-           
-            $arr = (array) json_decode( $item['data']);
-            $arr['row_no'] =  $item['row_no'];
+        foreach($this->errors as $error){
+            $arr = (array) json_decode( $error['data']);
+            $arr['row_no'] =  $error['row_no'];
+            $arr['error_message'] =  $error['message'];
             $data[] = $arr ;
         }
-       
         return $data;
     }
 
@@ -38,6 +37,8 @@ class SuccessExcelExport implements  FromArray,WithHeadings
         });
         $header = $header->toArray();
         $header[] = 'row_no';
+        $header[] = 'error_message';
         return $header ;
     }
+  
 }

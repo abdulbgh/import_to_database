@@ -1,34 +1,27 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\Client\Import;
 
-use App\Exports\ErrorExcelExport;
-use Exception;
 
+use App\Exports\Api\Tenant\Client\Export\Log\ClientErrorLogExport;
 use App\Models\Customer;
 use App\Models\Document;
-use App\Models\ImportLog;
 use App\Models\BufferExcel;
 use Illuminate\Http\Request;
-use App\Imports\Api\ErrorImport;
-use App\Imports\Api\BufferImport;
-use App\Imports\Api\SuccessImport;
-use App\Services\ExcelService;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Excel as ExcelExcel;
+use App\Services\Api\Tenant\Client\Import\ClientImportService;
 
-class ExcelController extends Controller
+class ClientImportController extends Controller
 {
-
-    public function __construct(private readonly ExcelService $service)
+    public function __construct(private readonly ClientImportService $service)
     {
         
     }
-    
     public function uploadDocument(Request $request){ 
-       $path_name =  $this->service->storeFile($request->file('file'),$request->module_id);
+       $base_path =  $this->service->getImportPathName(1,$request->module_id);
+       $path_name =  $this->service->storeFile($request->file('file'),$base_path);
        $document =  Document::updateOrCreate(
         [
             'module_id' => $request->module_id,
@@ -51,20 +44,19 @@ class ExcelController extends Controller
             if(count($bufferData) > 0){
                 foreach($bufferData as $data) {
                     $data = (array) json_decode($data);
-                    Customer::updateOrCreate(['id' => $data['id']],$data);
+                    Customer::updateOrCreate(['email' => $data['email']],$data);
                 }
             }
-           
-            //excel file generate for log file - success and error file
-            $this->service->ExcelGenerator($q_error->get()->toArray(),$q_valid->get()->toArray(),$document);
-           
+            $base_path = $this->service->getExportPathName(1,$document->module_id);
+             //excel file generate for log file - success and error file
+            $this->service->ExcelGenerator($q_error->get()->toArray(),$q_valid->get()->toArray(),$document,$base_path);
             $q_valid->delete();
         DB::commit();
             return response()->json([
                 'status' => true,
                 'total_import' => count($bufferData)
             ]);
-       }catch(Exception $e){
+       }catch(\Exception $e){
         DB::rollBack();
             return response()->json([
                 'status' => false,
@@ -72,12 +64,12 @@ class ExcelController extends Controller
             ]);
        }
     }
-
     public function getErrorData(Request $request){
           $d_id =   $request->document_id;
           $data = BufferExcel::where('document_id',$d_id)->where('validate_status',0)->get()->toArray();
-          $export = new ErrorExcelExport($data);
+          $export = new ClientErrorLogExport($data);
           return   Excel::download($export, 'error_data.xlsx');
     }
-    
+
+
 }

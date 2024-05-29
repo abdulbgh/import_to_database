@@ -1,10 +1,8 @@
 <?php
 
-namespace App\Imports\Api;
+namespace App\Imports\Api\Tenant\Client\Import;
 
 use App\Models\Customer;
-
-
 use App\Models\BufferExcel;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Validators\Failure;
@@ -15,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\RemembersRowNumber;
 
-class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingRow
+class BufferClientImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingRow
 {
     use Importable,RemembersRowNumber,SkipsFailures;
     protected $errorData = [];
@@ -57,7 +55,7 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
         if(isset($row['row_no'])){
            $this->reInsertErrorData($row);
         }else{
-            $exists =  Customer::where('id',$row['id'])->exists(); //if exists in moduel table then the row will be skipped
+            $exists =  Customer::where('email',$row['email'])->exists(); //if exists in module table then the row will be skipped
             if(!$exists){
                 $model =  BufferExcel::updateOrCreate(
                     ['row_no' =>  $this->getRowNumber()],
@@ -69,7 +67,7 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
         }
     }
     public function reInsertErrorData($row){
-        $exists =  Customer::where('id',$row['id'])->exists();
+        $exists =  Customer::where('email',$row['email'])->exists();
            //checking data is already inserted in module table , if already inserted no need to work with that data
             if(!$exists){
                 $model =  BufferExcel::updateOrCreate(
@@ -119,7 +117,7 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
                 'value' => $failure->values(),
             ];
             $this->setInitialForError($this->initial,$failure);
-            $exists =  Customer::where('id',$failure->values()['id'])->exists();
+            $exists =  Customer::where('email',$failure->values()['email'])->exists();
            if(!$exists){
             BufferExcel::updateOrCreate(
                 ['row_no' => isset($failure->values()['row_no']) ?  $failure->values()['row_no'] :  $failure->row() ],
@@ -130,3 +128,4 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
         }
     }
 }
+

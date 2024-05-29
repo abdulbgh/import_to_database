@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Client\Import\ClientImportController;
 use App\Http\Controllers\ExcelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -10,7 +11,6 @@ Route::get('/user', function (Request $request) {
 
 
 
-Route::post('store/file',[ExcelController::class,'uploadDocument']);
-// Route::post('import/file',[ExcelController::class,'ExcelImport']);
-Route::post('transfer/data',[ExcelController::class,'transferToModule']);
-Route::get('error/data',[ExcelController::class,'getErrorData']);
+Route::post('client/import/file',[ClientImportController::class,'uploadDocument']);
+Route::post('client/import/transfer',[ClientImportController::class,'transferToModule']);
+Route::get('client/import/error',[ClientImportController::class,'getErrorData']);
