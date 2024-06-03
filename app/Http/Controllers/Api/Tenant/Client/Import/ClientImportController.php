@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Tenant\Import;
+namespace App\Http\Controllers\Api\Tenant\Client\Import;
 
 
 use App\Models\Branch;

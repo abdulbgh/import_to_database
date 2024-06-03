@@ -2,7 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Tenant\Import\ClientImportController;
+use App\Http\Controllers\Api\Tenant\Client\Import\ClientImportController;
+
 
 
 Route::get('/user', function (Request $request) {
