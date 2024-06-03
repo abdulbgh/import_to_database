@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Module;
 use App\Models\Account;
 use Illuminate\Database\Seeder;
 
@@ -22,8 +23,17 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        Account::create([
-            'name' => 'Accounts',
-        ]);
+        
+        $modules = [
+            'ORGANIZATION_PROFILE',
+            'BRANCH',
+            'CUSTOMER'
+        ];
+
+        foreach($modules as $module){
+            Module::create([
+                'name' => $module,
+            ]);
+        }
     }
 }

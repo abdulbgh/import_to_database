@@ -3,13 +3,13 @@
 
 namespace App\Services\Api\Tenant\Client\Import;
 
-use App\Exports\Api\Tenant\Client\Export\Log\ClientErrorLogExport;
-use App\Exports\Api\Tenant\Client\Export\Log\ClientSuccessLogExport;
+use App\Exports\Api\Tenant\ErrorLogExport;
+use App\Exports\Api\Tenant\SuccessLogExport;
 use App\Models\Customer;
 use App\Models\ImportLog;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
-use App\Imports\Api\Tenant\Client\Import\BufferClientImport;
+use App\Imports\Api\Tenant\BufferImport;
 
 
 class ClientImportService {
@@ -43,7 +43,7 @@ class ClientImportService {
 
     public function ExcelImport($document) {
         try{
-             $moduleImportFunc = new BufferClientImport($document);
+             $moduleImportFunc = new BufferImport($document);
              $file = Storage::disk($this->disk)->path($document->name);
              $moduleImportFunc->import($file);
              return response()->json([
@@ -52,7 +52,6 @@ class ClientImportService {
                  'success_count' => count($moduleImportFunc->getSuccessData()),
                  'error_count' => count($moduleImportFunc->getErrorData()),
              ]);
- 
         }catch(\Exception $e){
              return response()->json([
                  'status' => false,
@@ -61,17 +60,17 @@ class ClientImportService {
         }
      }
 
-    public function ExcelGenerator($excelErrorData,$successData,$document,$base_path){
+    public function ExcelExportGeneratorForLog($excelErrorData,$successData,$document,$base_path){
         $error_data =  $this->ErrorDataFormatForExcel($excelErrorData);
         $success_data =  $this->SuccessDataFormatForExcel($successData);
         if(count($error_data)){
             $error_path = $base_path . rand().'.xlsx';
-            $errro_data_export = new ClientErrorLogExport($error_data);
+            $errro_data_export = new ErrorLogExport($error_data,$document->id);
             Excel::store($errro_data_export, $error_path,$this->disk);
         }
         if(count($success_data) > 0){
             $success_path = $base_path . rand().'.xlsx';
-            $sucess_data_export = new ClientSuccessLogExport($success_data);
+            $sucess_data_export = new SuccessLogExport($success_data,$document->id);
             Excel::store($sucess_data_export, $success_path,$this->disk);
         }
     

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api\Client\Import;
+namespace App\Http\Controllers\Api\Tenant\Import;
 
 
-use App\Exports\Api\Tenant\Client\Export\Log\ClientErrorLogExport;
+use App\Exports\Api\Tenant\ErrorLogExport;
 use App\Models\Customer;
 use App\Models\Document;
 use App\Models\BufferExcel;
@@ -47,9 +47,9 @@ class ClientImportController extends Controller
                     Customer::updateOrCreate(['email' => $data['email']],$data);
                 }
             }
-            $base_path = $this->service->getExportPathName(1,$document->module_id);
+            $path = $this->service->getExportPathName(1,$document->module_id);
              //excel file generate for log file - success and error file
-            $this->service->ExcelGenerator($q_error->get()->toArray(),$q_valid->get()->toArray(),$document,$base_path);
+            $this->service->ExcelExportGeneratorForLog($q_error->get()->toArray(),$q_valid->get()->toArray(),$document,$path);
             $q_valid->delete();
         DB::commit();
             return response()->json([
@@ -60,14 +60,15 @@ class ClientImportController extends Controller
         DB::rollBack();
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ]);
        }
     }
-    public function getErrorData(Request $request){
-          $d_id =   $request->document_id;
-          $data = BufferExcel::where('document_id',$d_id)->where('validate_status',0)->get()->toArray();
-          $export = new ClientErrorLogExport($data);
+    public function getErrorDataAsExcel(Request $request){
+          $dc_id =   $request->document_id;
+          $data = BufferExcel::where('document_id',$dc_id)->where('validate_status',0)->get()->toArray();
+          $export = new ErrorLogExport($data,$dc_id);
           return   Excel::download($export, 'error_data.xlsx');
     }
 
