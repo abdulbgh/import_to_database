@@ -10,7 +10,7 @@ use App\Models\ImportLog;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\Api\Tenant\BufferImport;
-
+use App\Models\BufferExcel;
 
 class ClientImportService {
      public  $disk;
@@ -46,11 +46,12 @@ class ClientImportService {
              $moduleImportFunc = new BufferImport($document);
              $file = Storage::disk($this->disk)->path($document->name);
              $moduleImportFunc->import($file);
+             $error_data =  BufferExcel::where('document_id',$document->id)->where('validate_status',0)->get()->toArray();
              return response()->json([
-                 'errorData' =>  $moduleImportFunc->getErrorData(),
+                 'errorData' =>  $error_data,
                  'successData' =>  $moduleImportFunc->getSuccessData(),
                  'success_count' => count($moduleImportFunc->getSuccessData()),
-                 'error_count' => count($moduleImportFunc->getErrorData()),
+                 'error_count' => count($error_data),
              ]);
         }catch(\Exception $e){
              return response()->json([
@@ -83,10 +84,7 @@ class ClientImportService {
             'error_file_path' => count($excelErrorData) > 0 ? $error_path : null,
             'success_file_path' => count($successData) > 0  ? $success_path : null,
         ]);
-        return [
-            'error_file_path' => count($excelErrorData) > 0 ? $error_path : null,
-            'success_file_path' => count($successData) > 0  ? $success_path : null,
-        ];
+        
     }
     public function ErrorDataFormatForExcel($excelErrorData){
         $error_data = [];

@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api\Tenant\Import;
 
 
-use App\Exports\Api\Tenant\ErrorLogExport;
+use App\Models\Branch;
+use App\Models\Module;
 use App\Models\Customer;
 use App\Models\Document;
 use App\Models\BufferExcel;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Api\Tenant\ErrorLogExport;
 use App\Services\Api\Tenant\Client\Import\ClientImportService;
 
 class ClientImportController extends Controller
@@ -38,14 +41,14 @@ class ClientImportController extends Controller
        try{
         DB::beginTransaction();
             $q_valid  =  BufferExcel::where('document_id',$request->document_id)->where('validate_status',1);
-            $bufferData =  $q_valid->pluck('data')->toArray();
+            $buffer_valid_data =  $q_valid->pluck('data')->toArray();
             $q_error  =  BufferExcel::where('document_id',$request->document_id)->where('validate_status',0);
             $document = Document::find($request->document_id);
-            if(count($bufferData) > 0){
-                foreach($bufferData as $data) {
+            if(count($buffer_valid_data) > 0){
+                foreach($buffer_valid_data as $data) {
                     $data = (array) json_decode($data);
-                    Customer::updateOrCreate(['email' => $data['email']],$data);
-                }
+                    Customer::updateOrCreate(['email' => $data['email']],$data); 
+                }                 
             }
             $path = $this->service->getExportPathName(1,$document->module_id);
              //excel file generate for log file - success and error file
@@ -54,7 +57,7 @@ class ClientImportController extends Controller
         DB::commit();
             return response()->json([
                 'status' => true,
-                'total_import' => count($bufferData)
+                'total_import' => count($buffer_valid_data)
             ]);
        }catch(\Exception $e){
         DB::rollBack();
@@ -71,6 +74,44 @@ class ClientImportController extends Controller
           $export = new ErrorLogExport($data,$dc_id);
           return   Excel::download($export, 'error_data.xlsx');
     }
+
+    // public function ModuleDataTransfer($model,$data) {
+    //     if($model['unique_column'] == 'email'){
+    //         $model['object']::updateOrCreate(['email' => $data['email']],$data);
+    //     }else{
+    //         $columnForupdate = collect($data)->filter(function ($value,$item) use ($model){
+    //              if(in_array($item,$model['unique_column'])){
+    //                 return [$item => $value];
+    //              }
+    //         });
+    //         $model['object']::updateOrCreate($columnForupdate->toArray(),$data);
+    //     }
+    //     return $model ;
+    // }
+
+    public function  resolveModuleById($moduleId){
+        $modules = Module::all();
+        $model = [];
+        foreach($modules as $module){
+            $name = $module->name;
+            if($module->id == $moduleId){
+                if($name == "ORGANIZATION_PROFILE" ){
+                    $model['object'] = new Organization();
+                    $model['unique_column'] =  ['email'];  
+                }else if($name == "BRANCH" ) {
+                    $model['object'] = new Branch();
+                    $model['unique_column'] =  ['name'];
+                }else if($name == "CUSTOMER"){
+                    $model['object'] = new Customer();
+                    $model['unique_column'] =  ['email'];
+                }else{
+                    $model = [];
+                }
+            }
+        }
+        return $model ;
+    }
+    
 
 
 }

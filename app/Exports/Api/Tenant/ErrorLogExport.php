@@ -35,8 +35,8 @@ class ErrorLogExport implements FromArray,WithHeadings,WithStyles
         foreach($this->errors as $error){
             $mappedRow = [];
             $values = (array) json_decode( $error['data']);
-            foreach($values as $key=>$value) {
-                foreach($headers as $header){
+            foreach($headers as $header) {
+                foreach($values as $key=>$value){
                     if($key == strtolower($header)){
                         $mappedRow[strtolower($header)] = $value;
                     }
@@ -46,7 +46,7 @@ class ErrorLogExport implements FromArray,WithHeadings,WithStyles
             $mappedRow['error_message'] =  $error['message'];
             $data[] = $mappedRow;
         }
-      
+       
         return $data;
     }
 
@@ -92,8 +92,15 @@ class ErrorLogExport implements FromArray,WithHeadings,WithStyles
 
     public function styles(Worksheet $sheet)
     {
+        
+        $highestColumn = $sheet->getHighestColumn();
+        for ($column = 'A'; $column <= $highestColumn; $column++) {
+            $sheet->getColumnDimension($column)->setWidth(30);
+        }
+
         return [
             1 => ['font' => ['bold' => true, 'size' => 14]], // Bold font, size 14
+           
         ];
     }
 }

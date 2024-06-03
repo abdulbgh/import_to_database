@@ -4,9 +4,10 @@ namespace App\Imports\Api\Tenant;
 
 use App\Models\Branch;
 use App\Models\Module;
-use App\Models\BufferExcel;
 use App\Models\Customer;
+use App\Models\BufferExcel;
 use App\Models\Organization;
+use Exception;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Validators\Failure;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -14,13 +15,14 @@ use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\RemembersRowNumber;
 
-class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingRow
+class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingRow,WithChunkReading
 {
     use Importable,RemembersRowNumber,SkipsFailures;
-    protected $errorData = [];
-    protected $successData = [];
+   
     protected $initial = [
         'validate_status' => false,
         'import_status' => false,
@@ -31,6 +33,8 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
         
     ];
     protected  $module_id = null;
+    protected  $successData = [];
+    protected  $errorData = [];
 
     public function __construct($document)
     {
@@ -42,7 +46,11 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
             return  $this->validate($row);  
     }
     public function rules():array {
-        return $this->resolveRule();
+         if(!empty($this->resolveRule())){
+           return  $this->resolveRule();
+         }else{
+             throw new \Exception('No Module Found for  Validation');
+         }
     }
     public function validate($row) {
         
@@ -76,12 +84,14 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
             return $model;
         }
     }
+
     public function getSuccessData() {
         return $this->successData;
     }
     public function getErrorData() {
         return $this->errorData;
     }
+   
     public function setInitialForSuccess($row) {
         $data = $row;
         if(isset($data['row_no'])){
@@ -173,6 +183,8 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
                             },
                         ],
                      ];
+                }else{
+                  return  [];
                 }
             }
         }
@@ -200,6 +212,12 @@ class BufferImport implements ToModel,SkipsOnFailure,WithValidation,WithHeadingR
             }
         }
         return $model ;
+    }
+    
+
+    public function chunkSize(): int
+    {
+        return 300;
     }
 }
 

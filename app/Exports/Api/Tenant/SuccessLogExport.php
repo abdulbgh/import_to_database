@@ -29,10 +29,20 @@ class SuccessLogExport implements  FromArray,WithHeadings,WithStyles
     }
     public function array(): array
     {
+       $data = [];
+       $headers =  $this->headings();
         foreach($this->success_data as $item){
-            $arr = (array) json_decode( $item['data']);
-            $arr['row_no'] =  $item['row_no'];
-            $data[] = $arr ;
+            $mappedRow = [];
+            $values = (array) json_decode( $item['data']);
+            foreach($headers as $header) {
+                foreach($values as $key=>$value){
+                    if($key == strtolower($header)){
+                        $mappedRow[strtolower($header)] = $value;
+                    }
+                }
+            }
+            $mappedRow['row_no'] =  $item['row_no'];
+            $data[] = $mappedRow;
         }
         return $data;
     }
@@ -74,10 +84,13 @@ class SuccessLogExport implements  FromArray,WithHeadings,WithStyles
     }
     public function styles(Worksheet $sheet)
     {
+        $highestColumn = $sheet->getHighestColumn();
+        for ($column = 'A'; $column <= $highestColumn; $column++) {
+            $sheet->getColumnDimension($column)->setWidth(30);
+        }
         return [
            
             1 => ['font' => ['bold' => true, 'size' => 14]], // Bold font, size 14
-         
         ];
     }
 }
